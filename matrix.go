@@ -1,6 +1,6 @@
-package main
+package face
 
-// Obtained from github.com/fogleman/gg
+// Modified from github.com/fogleman/gg
 // Oct 28, 2019
 // Michael Fogleman and Contributors
 // LICENSE: MIT
@@ -104,16 +104,8 @@ func (m Matrix) AdjustScale(scale float64) Matrix {
 	return m
 }
 
-// AdjustScale2 -
-func (m Matrix) AdjustScale2(scale float64) Matrix {
-	m.XX = m.XX*scale + m.YX*scale
-	m.XY = m.XX*scale + m.YX*scale
-	m.YX = m.XY*scale + m.YY*scale
-	m.YY = m.XY*scale + m.YY*scale
-	return m
-}
-
-// RotationMatrix2D - similiar to OpenCV's function
+// RotationMatrix2D creates a Rotation and Transformation Matrix.
+// This is similiar to OpenCV's function.
 // Angle in Radians
 func RotationMatrix2D(centerX, centerY float64, angle, scale float64) Matrix {
 	a := scale * math.Cos(angle)
@@ -125,11 +117,10 @@ func RotationMatrix2D(centerX, centerY float64, angle, scale float64) Matrix {
 	}
 }
 
-// AdjustPosition -
-func (m Matrix) AdjustPosition(x, y float64) Matrix {
+// AdjustPosition adjust position of the matrix by x and y
+func (m *Matrix) AdjustPosition(x, y float64) {
 	m.X0 += x
 	m.Y0 += y
-	return m
 }
 
 // Rotate a Matrix using x and y

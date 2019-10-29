@@ -1,4 +1,4 @@
-package main
+package face
 
 import (
 	"fmt"
@@ -8,25 +8,21 @@ import (
 	"github.com/tensorflow/tensorflow/tensorflow/go/op"
 )
 
+// Detector - Detector for faces in an image based on an MTCNN model.
+// Uses a Multi-task Cascaded Convolutional Network Detector trained from:
 // https://kpzhang93.github.io/MTCNN_face_detection_alignment/
-// Yu Qiao (yu.qiao@siat.ac.cn)
-// Kaipeng Zhang (kpzhang@cmlab.csie.ntu.edu.tw)
-// LICENSE MIT
-
-// MtcnnDetector - Multi-task Cascaded Convolutional Network Detector
-type MtcnnDetector struct {
-	modelFile string
-	graph     *tf.Graph
-	session   *tf.Session
+type Detector struct {
+	graph   *tf.Graph
+	session *tf.Session
 
 	minSize         float32
 	scaleFactor     float32
 	scoreThresholds []float32
 }
 
-// NewMtcnnDetector - Create a New MtcnnDetector from a model file
-func NewMtcnnDetector(modelFile string) (*MtcnnDetector, error) {
-	det := &MtcnnDetector{modelFile: modelFile, minSize: 30.0, scaleFactor: 0.709, scoreThresholds: []float32{0.6, 0.7, 0.8}}
+// NewFaceDetector - Create a New FaceDetector from a model file
+func NewFaceDetector(modelFile string) (*Detector, error) {
+	det := &Detector{minSize: 30.0, scaleFactor: 0.709, scoreThresholds: []float32{0.6, 0.7, 0.8}}
 	model, err := ioutil.ReadFile(modelFile)
 	if err != nil {
 		return nil, err
@@ -49,7 +45,7 @@ func NewMtcnnDetector(modelFile string) (*MtcnnDetector, error) {
 }
 
 // Config - Set options for scaleFactor, minSize and scoreThresholds
-func (det *MtcnnDetector) Config(scaleFactor, minSize float32, scoreThresholds []float32) {
+func (det *Detector) Config(scaleFactor, minSize float32, scoreThresholds []float32) {
 	if scaleFactor > 0 {
 		det.scaleFactor = scaleFactor
 	}
@@ -61,8 +57,8 @@ func (det *MtcnnDetector) Config(scaleFactor, minSize float32, scoreThresholds [
 	}
 }
 
-// Close - Close an MtcnnDetector Session
-func (det *MtcnnDetector) Close() {
+// Close - Close a FaceDetector Session
+func (det *Detector) Close() {
 	if det.session != nil {
 		det.session.Close()
 		det.session = nil
@@ -104,7 +100,8 @@ func TensorFromJpeg(bytes []byte) (*tf.Tensor, error) {
 	return outs[0], nil
 }
 
-func (det *MtcnnDetector) DetectFaces(tensor *tf.Tensor) ([]Face, error) {
+// DetectFaces - runs the tensorflow detection session and outputs an array of Faces
+func (det *Detector) DetectFaces(tensor *tf.Tensor) ([]Face, error) {
 	session := det.session
 	graph := det.graph
 

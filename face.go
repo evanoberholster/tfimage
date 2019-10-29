@@ -1,4 +1,4 @@
-package main
+package face
 
 import (
 	"fmt"
@@ -7,7 +7,6 @@ import (
 
 	"golang.org/x/image/draw"
 	"golang.org/x/image/math/f64"
-	// Look for f64.Affine and draw.Transform
 )
 
 // Face -
@@ -82,20 +81,16 @@ func (f Face) Angle() float64 {
 	return math.Atan2(y0-y1, x0-x1)
 }
 
-// ToImage -
+// ToImage transforms an image by the matrix and returns the face image
 func (f Face) ToImage(im image.Image, kernel draw.Interpolator) *image.RGBA {
 	faceImg := image.NewRGBA(image.Rect(0, 0, f.dstFaceWidth, f.dstFaceHeight))
-	fmt.Println(im.Bounds())
-
 	s2d := f64.Aff3{f.matrix.XX, f.matrix.XY, f.matrix.X0, f.matrix.YX, f.matrix.YY, f.matrix.Y0}
-	//kernel.Transform(faceImg, s2d, im, image.Rect(int(f.Bbox[1]*0.5), int(f.Bbox[0]*0.5), int(f.Bbox[2]*1.5), int(f.Bbox[3]*1.50)), draw.Src, nil)
 	kernel.Transform(faceImg, s2d, im, im.Bounds(), draw.Src, nil)
-
 	return faceImg
 }
 
 //AffineMatrix - Face Warp Affine Matrix
-func (f *Face) AffineMatrix(faceWidth, faceHeight int, im image.Image) {
+func (f *Face) AffineMatrix(faceWidth, faceHeight int) {
 	// Output Size
 	f.dstFaceWidth, f.dstFaceHeight = faceWidth, faceHeight
 	desiredLeftEyeX, desiredLeftEyeY := 0.35, 0.35
@@ -141,7 +136,7 @@ func (f *Face) AffineMatrix(faceWidth, faceHeight int, im image.Image) {
 	f.matrix = RotationMatrix2D(eyesX, eyesY, angle, scale)
 
 	// Adjust position of the image
-	f.matrix = f.matrix.AdjustPosition((tX - eyesX), (tY - eyesY))
+	f.matrix.AdjustPosition((tX - eyesX), (tY - eyesY))
 
 	// unCenter the matrix from around the eyes
 	//f.matrix = f.matrix.Translate(-eyesX, -eyesY)
