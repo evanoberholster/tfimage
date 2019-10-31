@@ -93,7 +93,7 @@ func (f Face) ToImage(im image.Image, kernel draw.Interpolator) *image.RGBA {
 func (f *Face) AffineMatrix(faceWidth, faceHeight int) {
 	// Output Size
 	f.dstFaceWidth, f.dstFaceHeight = faceWidth, faceHeight
-	desiredLeftEyeX, desiredLeftEyeY := 0.35, 0.35
+	desiredLeftEyeX, desiredLeftEyeY := 0.33, 0.30
 
 	// Eye Points
 	x1, y1 := f.LeftEye()
@@ -140,6 +140,4 @@ func (f *Face) AffineMatrix(faceWidth, faceHeight int) {
 
 	// unCenter the matrix from around the eyes
 	//f.matrix = f.matrix.Translate(-eyesX, -eyesY)
-
-	fmt.Println(f.matrix)
 }

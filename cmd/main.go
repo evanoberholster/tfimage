@@ -12,20 +12,23 @@ import (
 )
 
 func main() {
-	det, err := face.NewFaceDetector("../models/mtcnn_rgb_1.14.pb")
+	det, err := face.NewFaceDetector("../models/mtcnn_1.14.pb")
 	if err != nil {
 		panic(err)
 	}
 
-	buf, err := ioutil.ReadFile("../../test/img/13.jpg")
+	buf, err := ioutil.ReadFile("../../test/img/17.jpg")
 	if err != nil {
 		panic(err)
 	}
+	// Reduce image to 2000px max edge
+
 	start := time.Now()
 	tfImg, err := face.TensorFromJpeg(buf)
 	if err != nil {
 		fmt.Println(err)
 	}
+
 	fmt.Println(time.Since(start))
 	fmt.Println(tfImg.Shape())
 	faces, err := det.DetectFaces(tfImg)
@@ -39,10 +42,11 @@ func main() {
 	startG := time.Now()
 
 	for idx, f := range faces {
-		start := time.Now()
+		//start := time.Now()
 		f.AffineMatrix(256, 256)
-		fmt.Println("Affine", time.Since(start))
-		im := f.ToImage(i, draw.BiLinear)
+
+		im := f.ToImage(i, draw.CatmullRom)
+		//fmt.Println("Affine", time.Since(start))
 
 		face.SaveJPG(fmt.Sprintf("p%d.jpg", idx), im, 80)
 	}
