@@ -1,4 +1,4 @@
-package face
+package tfimage
 
 import (
 	"image"

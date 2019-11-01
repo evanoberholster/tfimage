@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"time"
 
+	"github.com/disintegration/imaging"
+
 	"github.com/evanoberholster/face"
 	"golang.org/x/image/draw"
 )
@@ -16,8 +18,9 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer det.Close()
 
-	buf, err := ioutil.ReadFile("../../test/img/17.jpg")
+	buf, err := ioutil.ReadFile("../../test/img/12.jpg")
 	if err != nil {
 		panic(err)
 	}
@@ -53,4 +56,34 @@ func main() {
 	fmt.Println("Group", time.Since(startG))
 
 	face.DrawDebugJPG("debug.jpg", i, faces)
+
+	var buf2 bytes.Buffer
+	i = imaging.Resize(i, 224, 244, imaging.NearestNeighbor)
+	err = jpeg.Encode(&buf2, i, nil)
+	if err != nil {
+		panic(err)
+	}
+	// Aesthetics
+	eval, err := face.NewAestheticsEvaluator("../models/nima_model.pb")
+	if err != nil {
+		panic(err)
+	}
+
+	defer eval.Close()
+	aeImg, err := face.TensorFromJpeg(buf2.Bytes())
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	//fmt.Println(aeImg.Shape())
+	start = time.Now()
+	score, _ := eval.Run(aeImg)
+	fmt.Println(score)
+
+	fmt.Println(time.Since(start))
+
+	start = time.Now()
+	fmt.Println(eval.Run(aeImg))
+	fmt.Println(time.Since(start))
+
 }

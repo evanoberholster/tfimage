@@ -1,4 +1,4 @@
-package face
+package tfimage
 
 // Modified from github.com/fogleman/gg
 // Oct 28, 2019
