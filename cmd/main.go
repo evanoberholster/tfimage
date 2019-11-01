@@ -8,13 +8,12 @@ import (
 	"time"
 
 	"github.com/disintegration/imaging"
-
-	"github.com/evanoberholster/face"
+	"github.com/evanoberholster/tfimage"
 	"golang.org/x/image/draw"
 )
 
 func main() {
-	det, err := face.NewFaceDetector("../models/mtcnn_1.14.pb")
+	det, err := tfimage.NewFaceDetector("../models/mtcnn_1.14.pb")
 	if err != nil {
 		panic(err)
 	}
@@ -27,7 +26,7 @@ func main() {
 	// Reduce image to 2000px max edge
 
 	start := time.Now()
-	tfImg, err := face.TensorFromJpeg(buf)
+	tfImg, err := tfimage.TensorFromJpeg(buf)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -51,11 +50,11 @@ func main() {
 		im := f.ToImage(i, draw.CatmullRom)
 		//fmt.Println("Affine", time.Since(start))
 
-		face.SaveJPG(fmt.Sprintf("p%d.jpg", idx), im, 80)
+		tfimage.SaveJPG(fmt.Sprintf("p%d.jpg", idx), im, 80)
 	}
 	fmt.Println("Group", time.Since(startG))
 
-	face.DrawDebugJPG("debug.jpg", i, faces)
+	tfimage.DrawDebugJPG("debug.jpg", i, faces)
 
 	var buf2 bytes.Buffer
 	i = imaging.Resize(i, 224, 244, imaging.NearestNeighbor)
@@ -64,13 +63,13 @@ func main() {
 		panic(err)
 	}
 	// Aesthetics
-	eval, err := face.NewAestheticsEvaluator("../models/nima_model.pb")
+	eval, err := tfimage.NewAestheticsEvaluator("../models/nima_model.pb")
 	if err != nil {
 		panic(err)
 	}
 
 	defer eval.Close()
-	aeImg, err := face.TensorFromJpeg(buf2.Bytes())
+	aeImg, err := tfimage.TensorFromJpeg(buf2.Bytes())
 	if err != nil {
 		fmt.Println(err)
 	}

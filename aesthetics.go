@@ -1,4 +1,4 @@
-package ifimage
+package tfimage
 
 import (
 	"fmt"
