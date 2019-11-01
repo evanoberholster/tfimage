@@ -28,14 +28,21 @@ type FaceDetector struct {
 	graph   *tf.Graph
 	session *tf.Session
 
-	minSize         float32
+	Options         FaceDetectorOptions
 	scaleFactor     float32
 	scoreThresholds []float32
 }
 
+// FaceDetectorOptions -
+type FaceDetectorOptions struct {
+	MinimumSize int
+	FaceWidth   int
+	FaceHeight  int
+}
+
 // NewFaceDetector - Create a New FaceDetector from a model file
-func NewFaceDetector(modelFile string) (*FaceDetector, error) {
-	det := &FaceDetector{minSize: 30.0, scaleFactor: 0.709, scoreThresholds: []float32{0.6, 0.7, 0.8}}
+func NewFaceDetector(modelFile string, options FaceDetectorOptions) (*FaceDetector, error) {
+	det := &FaceDetector{scaleFactor: 0.709, scoreThresholds: []float32{0.6, 0.7, 0.8}, Options: options}
 	model, err := ioutil.ReadFile(modelFile)
 	if err != nil {
 		return nil, err
@@ -62,9 +69,6 @@ func (det *FaceDetector) Config(scaleFactor, minSize float32, scoreThresholds []
 	if scaleFactor > 0 {
 		det.scaleFactor = scaleFactor
 	}
-	if minSize > 0 {
-		det.minSize = minSize
-	}
 	if scoreThresholds != nil {
 		det.scoreThresholds = scoreThresholds
 	}
@@ -83,7 +87,15 @@ func (det *FaceDetector) DetectFaces(tensor *tf.Tensor) ([]Face, error) {
 	session := det.session
 	graph := det.graph
 
-	minSize, err := tf.NewTensor(det.minSize)
+	if det.Options.MinimumSize == 0 {
+		det.Options.MinimumSize = 30 // default size
+	}
+	if det.Options.FaceHeight == 0 || det.Options.FaceWidth == 0 {
+		det.Options.FaceWidth = 256
+		det.Options.FaceHeight = 256
+	}
+
+	minSize, err := tf.NewTensor(float32(det.Options.MinimumSize))
 	if err != nil {
 		return nil, fmt.Errorf("Minimum Size Error: %v", err)
 	}
@@ -95,6 +107,8 @@ func (det *FaceDetector) DetectFaces(tensor *tf.Tensor) ([]Face, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Scale Factor Error: %v", err)
 	}
+
+	var faces []Face
 
 	output, err := session.Run(
 		map[tf.Output]*tf.Tensor{
@@ -112,30 +126,29 @@ func (det *FaceDetector) DetectFaces(tensor *tf.Tensor) ([]Face, error) {
 	)
 
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
-	var faces []Face
+
 	if len(output) > 0 {
 		prob := output[0].Value().([]float32)
 		landmarks := output[1].Value().([][]float32)
 		bbox := output[2].Value().([][]float32)
 		for idx := range prob {
-			faces = append(faces, Face{
-				Bbox:      bbox[idx],
-				Prob:      prob[idx],
-				Landmarks: landmarks[idx],
-			})
+			faces = append(faces, NewFace(prob[idx], bbox[idx], landmarks[idx], det.Options.FaceWidth, det.Options.FaceHeight))
 		}
 	}
 	return faces, nil
 }
 
 // NewFace creates a new face with a probability
-func NewFace(p float32) Face {
+func NewFace(probability float32, bbox []float32, landmarks []float32, dstWidth, dstHeight int) Face {
 	return Face{
-		Prob:   p,
-		matrix: NewMatrix(),
+		Prob:          probability,
+		Bbox:          bbox,
+		Landmarks:     landmarks,
+		matrix:        NewMatrix(),
+		dstFaceHeight: dstHeight,
+		dstFaceWidth:  dstWidth,
 	}
 }
 
@@ -202,9 +215,9 @@ func (f Face) ToImage(im image.Image, kernel draw.Interpolator) *image.RGBA {
 }
 
 //AffineMatrix - Face Warp Affine Matrix
-func (f *Face) AffineMatrix(faceWidth, faceHeight int) {
+func (f *Face) AffineMatrix() {
 	// Output Size
-	f.dstFaceWidth, f.dstFaceHeight = faceWidth, faceHeight
+	//f.dstFaceWidth, f.dstFaceHeight = faceWidth, faceHeight
 	desiredLeftEyeX, desiredLeftEyeY := 0.33, 0.30
 
 	// Eye Points

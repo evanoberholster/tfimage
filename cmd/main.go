@@ -13,13 +13,16 @@ import (
 )
 
 func main() {
-	det, err := tfimage.NewFaceDetector("../models/mtcnn_1.14.pb")
+	opts := tfimage.FaceDetectorOptions{
+		MinimumSize: 50, // 50 Pixels
+	}
+	det, err := tfimage.NewFaceDetector("../models/mtcnn_1.14.pb", opts)
 	if err != nil {
 		panic(err)
 	}
 	defer det.Close()
 
-	buf, err := ioutil.ReadFile("../../test/img/12.jpg")
+	buf, err := ioutil.ReadFile("../../test/img/13.jpg")
 	if err != nil {
 		panic(err)
 	}
@@ -45,7 +48,7 @@ func main() {
 
 	for idx, f := range faces {
 		//start := time.Now()
-		f.AffineMatrix(256, 256)
+		f.AffineMatrix()
 
 		im := f.ToImage(i, draw.CatmullRom)
 		//fmt.Println("Affine", time.Since(start))
@@ -63,7 +66,7 @@ func main() {
 		panic(err)
 	}
 	// Aesthetics
-	eval, err := tfimage.NewAestheticsEvaluator("../models/nima_model.pb")
+	eval, err := tfimage.NewAestheticsEvaluator("../models/nima_1.14.pb")
 	if err != nil {
 		panic(err)
 	}
