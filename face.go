@@ -11,6 +11,11 @@ import (
 	"golang.org/x/image/math/f64"
 )
 
+// Errors
+const (
+	ErrLoadFile string = "Unable to Load MTCNN model file: %v\n"
+)
+
 // Face -
 type Face struct {
 	Prob          float32
@@ -45,7 +50,7 @@ func NewFaceDetector(modelFile string, options FaceDetectorOptions) (*FaceDetect
 	det := &FaceDetector{scaleFactor: 0.709, scoreThresholds: []float32{0.6, 0.7, 0.8}, Options: options}
 	model, err := ioutil.ReadFile(modelFile)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf(ErrLoadFile, modelFile)
 	}
 
 	graph := tf.NewGraph()
@@ -124,9 +129,8 @@ func (det *FaceDetector) DetectFaces(tensor *tf.Tensor) ([]Face, error) {
 		},
 		nil,
 	)
-
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Tensorflow Face Detection Error: %v", err)
 	}
 
 	if len(output) > 0 {

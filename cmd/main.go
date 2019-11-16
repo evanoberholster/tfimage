@@ -22,7 +22,7 @@ func main() {
 	}
 	defer det.Close()
 
-	buf, err := ioutil.ReadFile("../../test/img/13.jpg")
+	buf, err := ioutil.ReadFile("../../test/img/18.jpg")
 	if err != nil {
 		panic(err)
 	}
