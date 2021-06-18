@@ -1,8 +1,8 @@
 # tfImage
 
 Work in progress
-[x]Face detection (MTCNN)
-[x]Image aesthetics (NIMA)
+- Face detection (MTCNN)
+- Image aesthetics (NIMA)
 
 ## Example Code
  See cmd/main.go
