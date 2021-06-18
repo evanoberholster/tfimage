@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"image"
 	"image/jpeg"
 	"io/ioutil"
 	"time"
@@ -22,7 +23,7 @@ func main() {
 	}
 	defer det.Close()
 
-	buf, err := ioutil.ReadFile("../../test/img/13.jpg")
+	buf, err := ioutil.ReadFile("../../test/img/f.jpg")
 	if err != nil {
 		panic(err)
 	}
@@ -35,39 +36,28 @@ func main() {
 	}
 	fmt.Println("Time to Tensor: ", time.Since(start))
 
-	fmt.Println(tfImg.Shape())
-	startd := time.Now()
-	faces, err := det.DetectFaces(tfImg)
-	fmt.Println("Time to detect faces #1:", time.Since(startd))
-
-	startd = time.Now()
-	faces, err = det.DetectFaces(tfImg)
-	fmt.Println("Time to detect faces #2:", time.Since(startd))
-
-	fmt.Println(len(faces), faces)
-
-	i, err := jpeg.Decode(bytes.NewReader(buf))
+	faceResults, err := det.DetectFaces(tfImg)
 	if err != nil {
 		panic(err)
 	}
-	startG := time.Now()
+	fmt.Println(faceResults)
 
-	for idx, f := range faces {
-		//start := time.Now()
-		f.AffineMatrix()
-
-		im := f.ToImage(i, draw.CatmullRom)
-		//fmt.Println("Affine", time.Since(start))
-
-		tfimage.SaveJPG(fmt.Sprintf("p%d.jpg", idx), im, 80)
+	srcImage, err := jpeg.Decode(bytes.NewReader(buf))
+	if err != nil {
+		panic(err)
 	}
-	fmt.Println("Group", time.Since(startG))
-
-	tfimage.DrawDebugJPG("debug.jpg", i, faces)
+	start = time.Now()
+	n := 0
+	faceResults.ToJPEG(srcImage, draw.CatmullRom, 256, 256, func(faceImage image.Image) error {
+		n++
+		return tfimage.SaveJPG(fmt.Sprintf("p%d.jpg", n), faceImage, 80)
+	})
+	fmt.Println("Time taken to save images to disk:", time.Since(start))
+	faceResults.DrawDebugJPEG("debug.jpg", srcImage)
 
 	var buf2 bytes.Buffer
-	i = imaging.Resize(i, 800, 600, imaging.CatmullRom)
-	err = jpeg.Encode(&buf2, i, &jpeg.Options{Quality: 90})
+	srcImage = imaging.Resize(srcImage, 800, 600, imaging.CatmullRom)
+	err = jpeg.Encode(&buf2, srcImage, &jpeg.Options{Quality: 90})
 	if err != nil {
 		panic(err)
 	}
@@ -83,10 +73,7 @@ func main() {
 		fmt.Println(err)
 	}
 
-	fmt.Println(time.Since(start))
-
 	start = time.Now()
 	fmt.Println(eval.Run(aeImg))
-	fmt.Println(time.Since(start))
-
+	fmt.Println("Time to calculate visual asthetic of image: ", time.Since(start))
 }

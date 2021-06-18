@@ -5,7 +5,11 @@ package tfimage
 // Michael Fogleman and Contributors
 // LICENSE: MIT
 
-import "math"
+import (
+	"math"
+
+	"golang.org/x/image/math/f64"
+)
 
 // Matrix -
 type Matrix struct {
@@ -131,4 +135,8 @@ func (m Matrix) Rotate(angle float64) Matrix {
 // Shear a Matrix using x and y
 func (m Matrix) Shear(x, y float64) Matrix {
 	return Shear(x, y).Multiply(m)
+}
+
+func (m Matrix) ToAffineMatrix() f64.Aff3 {
+	return f64.Aff3{m.XX, m.XY, m.X0, m.YX, m.YY, m.Y0}
 }

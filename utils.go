@@ -19,13 +19,12 @@ func SaveJPG(path string, im image.Image, quality int) error {
 	return jpeg.Encode(file, im, &jpeg.Options{Quality: quality})
 }
 
-// DrawDebugJPG -
-func DrawDebugJPG(path string, im image.Image, faces []Face) error {
-	ctx := gg.NewContextForImage(im)
-	for _, f := range faces {
+func (fr *FaceResults) DrawDebugJPEG(path string, src image.Image) error {
+	ctx := gg.NewContextForImage(src)
+	for _, f := range fr.results {
 		// Draw Face
 		ctx.Push()
-		ctx.DrawRectangle(float64(f.Bbox[1]), float64(f.Bbox[0]), float64(f.Bbox[3]-f.Bbox[1]), float64(f.Bbox[2]-f.Bbox[0]))
+		ctx.DrawRectangle(float64(f.box[1]), float64(f.box[0]), float64(f.box[3]-f.box[1]), float64(f.box[2]-f.box[0]))
 		ctx.SetRGBA(150, 0, 0, 0.3)
 		ctx.Fill()
 		ctx.Pop()
