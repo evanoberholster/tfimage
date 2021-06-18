@@ -16,10 +16,7 @@ func SaveJPG(path string, im image.Image, quality int) error {
 	}
 	defer file.Close()
 
-	var opt jpeg.Options
-	opt.Quality = quality
-
-	return jpeg.Encode(file, im, &opt)
+	return jpeg.Encode(file, im, &jpeg.Options{Quality: quality})
 }
 
 // DrawDebugJPG -

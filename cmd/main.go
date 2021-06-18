@@ -14,7 +14,7 @@ import (
 
 func main() {
 	opts := tfimage.FaceDetectorOptions{
-		MinimumSize: 50, // 50 Pixels
+		MinimumSize: 100, // 50 Pixels
 	}
 	det, err := tfimage.NewFaceDetector("../models/mtcnn_1.14.pb", opts)
 	if err != nil {
@@ -22,7 +22,7 @@ func main() {
 	}
 	defer det.Close()
 
-	buf, err := ioutil.ReadFile("../../test/img/18.jpg")
+	buf, err := ioutil.ReadFile("../../test/img/13.jpg")
 	if err != nil {
 		panic(err)
 	}
@@ -33,11 +33,17 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	}
+	fmt.Println("Time to Tensor: ", time.Since(start))
 
-	fmt.Println(time.Since(start))
 	fmt.Println(tfImg.Shape())
+	startd := time.Now()
 	faces, err := det.DetectFaces(tfImg)
-	fmt.Println(time.Since(start))
+	fmt.Println("Time to detect faces #1:", time.Since(startd))
+
+	startd = time.Now()
+	faces, err = det.DetectFaces(tfImg)
+	fmt.Println("Time to detect faces #2:", time.Since(startd))
+
 	fmt.Println(len(faces), faces)
 
 	i, err := jpeg.Decode(bytes.NewReader(buf))
@@ -60,8 +66,8 @@ func main() {
 	tfimage.DrawDebugJPG("debug.jpg", i, faces)
 
 	var buf2 bytes.Buffer
-	i = imaging.Resize(i, 224, 244, imaging.NearestNeighbor)
-	err = jpeg.Encode(&buf2, i, nil)
+	i = imaging.Resize(i, 800, 600, imaging.CatmullRom)
+	err = jpeg.Encode(&buf2, i, &jpeg.Options{Quality: 90})
 	if err != nil {
 		panic(err)
 	}
@@ -76,11 +82,6 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	}
-
-	//fmt.Println(aeImg.Shape())
-	start = time.Now()
-	score, _ := eval.Run(aeImg)
-	fmt.Println(score)
 
 	fmt.Println(time.Since(start))
 

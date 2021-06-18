@@ -47,36 +47,30 @@ type FaceDetectorOptions struct {
 
 // NewFaceDetector - Create a New FaceDetector from a model file
 func NewFaceDetector(modelFile string, options FaceDetectorOptions) (*FaceDetector, error) {
+	if options.MinimumSize < 30 {
+		options.MinimumSize = 30 // default size
+	}
+	if options.FaceHeight == 0 || options.FaceWidth == 0 {
+		options.FaceWidth = 256
+		options.FaceHeight = 256
+	}
 	det := &FaceDetector{scaleFactor: 0.709, scoreThresholds: []float32{0.6, 0.7, 0.8}, Options: options}
 	model, err := ioutil.ReadFile(modelFile)
 	if err != nil {
 		return nil, fmt.Errorf(ErrLoadFile, modelFile)
 	}
 
-	graph := tf.NewGraph()
-	if err := graph.Import(model, ""); err != nil {
+	det.graph = tf.NewGraph()
+	if err := det.graph.Import(model, ""); err != nil {
 		return nil, err
 	}
 
-	session, err := tf.NewSession(graph, nil)
+	det.session, err = tf.NewSession(det.graph, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	det.graph = graph
-	det.session = session
-
 	return det, nil
-}
-
-// Config - Set options for scaleFactor, minSize and scoreThresholds
-func (det *FaceDetector) Config(scaleFactor, minSize float32, scoreThresholds []float32) {
-	if scaleFactor > 0 {
-		det.scaleFactor = scaleFactor
-	}
-	if scoreThresholds != nil {
-		det.scoreThresholds = scoreThresholds
-	}
 }
 
 // Close - Close a FaceDetector Session
@@ -89,33 +83,22 @@ func (det *FaceDetector) Close() {
 
 // DetectFaces - runs the tensorflow detection session and outputs an array of Faces
 func (det *FaceDetector) DetectFaces(tensor *tf.Tensor) ([]Face, error) {
-	session := det.session
-	graph := det.graph
-
-	if det.Options.MinimumSize == 0 {
-		det.Options.MinimumSize = 30 // default size
-	}
-	if det.Options.FaceHeight == 0 || det.Options.FaceWidth == 0 {
-		det.Options.FaceWidth = 256
-		det.Options.FaceHeight = 256
-	}
 
 	minSize, err := tf.NewTensor(float32(det.Options.MinimumSize))
 	if err != nil {
-		return nil, fmt.Errorf("Minimum Size Error: %v", err)
+		return nil, fmt.Errorf("error minimum size: %v", err)
 	}
 	threshold, err := tf.NewTensor(det.scoreThresholds)
 	if err != nil {
-		return nil, fmt.Errorf("Threshold Error: %v", err)
+		return nil, fmt.Errorf("error score threshold: %v", err)
 	}
 	factor, err := tf.NewTensor(det.scaleFactor)
 	if err != nil {
-		return nil, fmt.Errorf("Scale Factor Error: %v", err)
+		return nil, fmt.Errorf("error scale factor: %v", err)
 	}
 
-	var faces []Face
-
-	output, err := session.Run(
+	graph := det.graph
+	output, err := det.session.Run(
 		map[tf.Output]*tf.Tensor{
 			graph.Operation("sub").Output(0):        tensor,
 			graph.Operation("min_size").Output(0):   minSize,
@@ -130,15 +113,18 @@ func (det *FaceDetector) DetectFaces(tensor *tf.Tensor) ([]Face, error) {
 		nil,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("Tensorflow Face Detection Error: %v", err)
+		return nil, fmt.Errorf("error tensorflow Face Detection: %v", err)
 	}
 
+	var faces []Face
 	if len(output) > 0 {
 		prob := output[0].Value().([]float32)
 		landmarks := output[1].Value().([][]float32)
 		bbox := output[2].Value().([][]float32)
-		for idx := range prob {
-			faces = append(faces, NewFace(prob[idx], bbox[idx], landmarks[idx], det.Options.FaceWidth, det.Options.FaceHeight))
+
+		faces = make([]Face, len(prob))
+		for i := 0; i < len(prob); i++ {
+			faces[i] = NewFace(prob[i], bbox[i], landmarks[i], det.Options.FaceWidth, det.Options.FaceHeight)
 		}
 	}
 	return faces, nil
