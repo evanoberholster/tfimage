@@ -51,6 +51,5 @@ func DrawDebugJPG(path string, im image.Image, faces []Face) error {
 		ctx.Fill()
 		ctx.Pop()
 	}
-	err := ctx.SaveJPG(path, 80)
-	return err
+	return SaveJPG(path, ctx.Image(), 70)
 }
